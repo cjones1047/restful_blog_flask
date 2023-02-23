@@ -1,0 +1,4 @@
+Flask-CKEditor==0.4.4.1
+flask==2.2.2
+flask-sqlalchemy==3.0.2
+WTForms~=3.0.1
