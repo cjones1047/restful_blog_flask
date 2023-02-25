@@ -55,11 +55,16 @@ def get_all_posts():
 
 @app.route("/post/<int:index>")
 def show_post(index):
-    requested_post = None
-    for blog_post in posts:
-        if blog_post["id"] == index:
-            requested_post = blog_post
-    return render_template("post.html", post=requested_post)
+    post_to_show = db.session.get(BlogPost, index)
+
+    return render_template("post.html", post=post_to_show)
+
+
+@app.route("/edit_post/<int:post_id>")
+def edit_post(post_id):
+    post_to_show = db.session.get(BlogPost, post_id)
+
+    return render_template("post.html", post=post_to_show)
 
 
 @app.route("/about")
