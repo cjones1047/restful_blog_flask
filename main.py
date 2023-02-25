@@ -1,19 +1,14 @@
-from flask import Flask, render_template, redirect, url_for
+from flask import Flask, render_template, redirect, url_for, request
 from flask_bootstrap import Bootstrap
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import create_engine, exc
 from flask_wtf import FlaskForm
 from wtforms import StringField, SubmitField
 from wtforms.validators import DataRequired, URL
 from flask_ckeditor import CKEditor, CKEditorField
 import os
+from datetime import datetime
 
 file_path = os.path.abspath(os.getcwd())+"/posts.db"
-
-
-## Delete this code:
-# import requests
-# posts = requests.get("https://api.npoint.io/43644ec4f0013682fc0d").json()
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = '8BYkEfBA6O6donzWlSihBXox7C0sKR6b'
@@ -67,7 +62,15 @@ def show_post(index):
 def new_post():
     form = CreatePostForm()
     if form.validate_on_submit():
-        print("Form validation passed")
+        post_dict = dict(request.form)
+        todays_date_formatted = datetime.today().strftime("%B %d, %Y")
+        post_dict['date'] = todays_date_formatted
+        # remove keys for columns that do not exist in database:
+        filtered_post_dict = {key: post_dict[key] for key in post_dict if key in dir(BlogPost)}
+        created_post = BlogPost(**filtered_post_dict)
+        db.session.add(created_post)
+        db.session.commit()
+        return redirect(url_for('get_all_posts'))
 
     return render_template("make-post.html", form=form)
 
