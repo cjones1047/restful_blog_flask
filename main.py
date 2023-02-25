@@ -17,12 +17,15 @@ file_path = os.path.abspath(os.getcwd())+"/posts.db"
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = '8BYkEfBA6O6donzWlSihBXox7C0sKR6b'
-ckeditor = CKEditor(app)
 Bootstrap(app)
 
 # CONNECT TO DB
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///'+file_path
 db = SQLAlchemy(app)
+
+# include CKEditor resources
+app.config['CKEDITOR_PKG_TYPE'] = 'full-all'
+ckeditor = CKEditor(app)
 
 
 # CONFIGURE TABLE
@@ -42,7 +45,7 @@ class CreatePostForm(FlaskForm):
     subtitle = StringField("Subtitle", validators=[DataRequired()])
     author = StringField("Your Name", validators=[DataRequired()])
     img_url = StringField("Blog Image URL", validators=[DataRequired(), URL()])
-    body = StringField("Blog Content", validators=[DataRequired()])
+    body = CKEditorField("Blog Content", validators=[DataRequired()])
     submit = SubmitField("Submit Post")
 
 
@@ -58,6 +61,15 @@ def show_post(index):
     post_to_show = db.session.get(BlogPost, index)
 
     return render_template("post.html", post=post_to_show)
+
+
+@app.route("/new_post", methods=["GET", "POST"])
+def new_post():
+    form = CreatePostForm()
+    if form.validate_on_submit():
+        print("Form validation passed")
+
+    return render_template("make-post.html", form=form)
 
 
 @app.route("/edit_post/<int:post_id>")
