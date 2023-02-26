@@ -79,15 +79,26 @@ def new_post():
 
 @app.route("/edit_post/<int:post_id>", methods=["GET", "POST"])
 def edit_post(post_id):
-    post_to_show = db.session.get(BlogPost, post_id)
+    post_to_edit = db.session.get(BlogPost, post_id)
     CreatePostForm.submit = SubmitField("Update Post")
     edit_form = CreatePostForm(
         **{
-            key: getattr(post_to_show, key) for key in post_to_show.__dict__ if key in dir(BlogPost)
+            key: getattr(post_to_edit, key) for key in post_to_edit.__dict__ if key in dir(BlogPost)
         }
     )
     if edit_form.validate_on_submit():
-        print(post_to_show)
+        # create Python dictionary from form data
+        form_dict = dict(request.form)
+        # remove keys for columns that do not exist in database:
+        filtered_form_dict = {key: form_dict[key] for key in form_dict if key in dir(BlogPost)}
+        post_to_edit_keys = vars(post_to_edit)
+        # iterate over every column in current db entry and change column value if not equal to form value
+        for key in post_to_edit_keys:
+            if key in filtered_form_dict and post_to_edit_keys[key] != filtered_form_dict[key]:
+                print(f"{key} changed")
+                setattr(post_to_edit, key, filtered_form_dict[key])
+        db.session.commit()
+        return redirect(url_for('show_post', index=post_to_edit.id))
 
     return render_template("make-post.html", form=edit_form, editing=True)
 
