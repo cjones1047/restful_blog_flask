@@ -41,7 +41,6 @@ class CreatePostForm(FlaskForm):
     author = StringField("Your Name", validators=[DataRequired()])
     img_url = StringField("Blog Image URL", validators=[DataRequired(), URL()])
     body = CKEditorField("Blog Content", validators=[DataRequired()])
-    submit = SubmitField("Submit Post")
 
 
 @app.route('/')
@@ -60,9 +59,12 @@ def show_post(index):
 
 @app.route("/new_post", methods=["GET", "POST"])
 def new_post():
+    CreatePostForm.submit = SubmitField("Submit Post")
     form = CreatePostForm()
     if form.validate_on_submit():
+        # create Python dictionary from form data
         post_dict = dict(request.form)
+        # insert 'date' property into post_dict, since the date of the post should not be edited by the user
         todays_date_formatted = datetime.today().strftime("%B %d, %Y")
         post_dict['date'] = todays_date_formatted
         # remove keys for columns that do not exist in database:
@@ -75,11 +77,19 @@ def new_post():
     return render_template("make-post.html", form=form)
 
 
-@app.route("/edit_post/<int:post_id>")
+@app.route("/edit_post/<int:post_id>", methods=["GET", "POST"])
 def edit_post(post_id):
     post_to_show = db.session.get(BlogPost, post_id)
+    CreatePostForm.submit = SubmitField("Update Post")
+    edit_form = CreatePostForm(
+        **{
+            key: getattr(post_to_show, key) for key in post_to_show.__dict__ if key in dir(BlogPost)
+        }
+    )
+    if edit_form.validate_on_submit():
+        print(post_to_show)
 
-    return render_template("post.html", post=post_to_show)
+    return render_template("make-post.html", form=edit_form, editing=True)
 
 
 @app.route("/about")
